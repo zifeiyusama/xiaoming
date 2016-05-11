@@ -18,10 +18,30 @@
         <ul class="sidebar-menu">
             <!-- <li class="header">HEADER</li> -->
             <!-- Optionally, you can add icons to the links -->
-            <li>
-                <a href="＃">
-                    <i class="fa fa-pencil-square-o"></i>
+            <li class="treeview">
+                <a href="{{ reverse_url('parks') }}">
+                    <i class="fa fa-car"></i>
                     <span>停车场</span>
+                    <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li><a href="{{ reverse_url('parks') }}"><i class="fa fa-bars"></i> 停车场管理 </a></li>
+                    <li><a href="{{ reverse_url('carports') }}"><i class="fa  fa-minus-square "></i> 停车位管理 </a></li>
+                </ul>
+            </li>
+            <li class="treeview">
+                <a href="#">
+                <i class="fa fa-shopping-cart "></i> <span>订单</span>
+                <i class="fa fa-angle-left pull-right"></i>
+                </a>
+                <ul class="treeview-menu">
+                    <li><a href="{{ reverse_url('appointments') }}"><i class="fa fa-book "></i> 预约订单 </a></li>
+                    <li><a href="{{ reverse_url('history') }}"><i class="fa fa-history"></i> 历史订单 </a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="{{ reverse_url('members') }}">
+                <i class="fa fa-users"></i> <span>会员</span>
                 </a>
             </li>
         </ul>

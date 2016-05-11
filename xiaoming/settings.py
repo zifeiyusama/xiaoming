@@ -37,6 +37,10 @@ REDIS_DB = 0
 # mongodb setting
 MONGO_HOST = '127.0.0.1'
 MONGO_PORT = 27017
+MONGO_DATABASE = 'park'
+
+# the park number that the socket client belongs to
+SOCKET_CLIENT_PARK_NUMBER = ''
 
 try:
     from local_settings import *

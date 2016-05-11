@@ -42,7 +42,7 @@ class Session(object):
 
     def __setitem__(self, key, value):
         self._data[key] = value
-        self.dirty = True
+        self._dirty = True
 
     def __delitem__(self, key):
         if key in self._data:
@@ -63,8 +63,9 @@ class Session(object):
         self.save()
 
     def save(self):
+        print('is the session dirty?: %s' % self._dirty)
         if self._dirty:
-            self.set_session(self.name, pickle.json.dumps(self._data), expires_days=self._expiry)
+            self.set_session(self.name, pickle.dumps(self._data), expires_days=self._expiry)
             self._dirty = False
 
 
@@ -90,7 +91,7 @@ class RedisSessionStore(object):
         session = pickle.loads(data) if data else dict()
         return session
 
-    def get_session(self, sid, session_data, name, expiry=None):
+    def set_session(self, sid, session_data, name, expiry=None):
         self.redis.hset(self.prefixed(sid), name, pickle.dumps(session_data))
         expiry = expiry or self.options['expire']
         if expiry:

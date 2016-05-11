@@ -1,182 +1,115 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-    xiaoming
+    xiaoming.models
     ~~~~~~~~~~~~~~~~~~~~
 
     models for xiaoming Application
 
     :copyright: (c) 2016 by 李紫君,杨明晓,侯增起,毕营帅.
 """
-from mongokit import Document, Connection
 from datetime import datetime
-from pymongo.objectid import ObjectId
-from settings import MONGO_HOST, MONGO_PORT
 
-connection = Connection(host=MONGO_HOST, port=MONGO_PORT)
+from mongoengine import connect, Document
+from mongoengine.fields import (StringField, DateTimeField, ObjectIdField, ReferenceField,
+                                IntField, EmailField, DictField,EmbeddedDocumentField, EmbeddedDocument,
+                                ListField, FloatField, BooleanField)
 
+from xiaoming.settings import MONGO_HOST, MONGO_PORT, MONGO_DATABASE
+from xiaoming.constants import PARK_STATUS, CARPORT_STATUS, SENSOR_STATUS, OAUTH_STATUS, ORDER_STATUS, SMS_STATUS
 
-@connection.register
-class Park(Document):
-    # TODO: 停车场位置信息
-    __database__ = 'park'
-    __collection__ = 'park'
-    structure = {
-        'number': basestring,
-        'description': basestring,
-        'carport_count': int,
-        'status': IS('筹备中', '使用中', '废弃'),
-        'created_by': ObjectId,
-        'created_date': datetime,
-        'last_modified_by': ObjectId,
-        'last_modified_date': datetime
-    }
-    required_fields = ['number']
-    default_values = {
-        'status': '筹备中',
-        'carport_count': 0,
-        'created_date': datetime.utcnow,
-        'last_modified_date': datetime.utcnow
-    }
+connect(MONGO_DATABASE, host=MONGO_HOST, port=MONGO_PORT)
 
 
-@connection.register
-class Carport(Document):
-    __database__ = 'park'
-    __collection__ = 'carport'
-    structure = {
-        'number': basestring,
-        'status': IS('空闲', '预约', '占用', '不可用'),
-        'sensors': list,
-        'position': dict,
-        'park': ObjectId,
-        'created_by': ObjectId,
-        'created_date': datetime,
-        'last_modified_by': ObjectId,
-        'last_modified_date': datetime
-    }
-    required_fields = ['number']
-    default_values = {
-        'status': '不可用',
-        'created_date': datetime.utcnow,
-        'last_modified_date': datetime.utcnow
-    }
+class Admin(Document):
+    email = EmailField(required=True)
+    name = StringField(required=True)
+    password = StringField(required=True)
+    created_date = DateTimeField(required=True)
 
 
-@connection.register
-class Sensor(Document):
-    __database__ = 'park'
-    __collection__ = 'sensor'
-    structure = {
-        'number': basestring,
-        'status': IS('工作正常', '故障', '维修中', '筹备中'),
-        'carport': ObjectId,
-        'created_by': ObjectId,
-        'created_date': datetime,
-        'last_modified_by': ObjectId,
-        'last_modified_date': datetime
-    }
-    required_fields = ['number', 'carport']
-    default_values = {
-        'status': '筹备中',
-        'created_date': datetime.utcnow,
-        'last_modified_date': datetime.utcnow
-    }
+class BaseDocument(Document):
+    number = StringField(required=True)
+    created_by = ReferenceField(Admin)
+    created_date = DateTimeField(required=True)
+    last_modified_by = ReferenceField(Admin)
+    last_modified_date = DateTimeField()
+
+    meta = {'allow_inheritance': True}
+
+    def prepare_save():
+        if self.created_date is None:
+            self.created_date = datetime.utcnow()
+        self.last_modified_date = datetime.utcnow()
 
 
-@connection.register
-class Member(Document):
-    __database__ = 'park'
-    __collection__ = 'member'
-    structure = {
-        'number': basestring,
-        'name': basestring,
-        'phone': basestring,
-        'password':basestring,
-        'register_date': datetime,
-        'level': basestring,
-    }
-    required_fields = ['number', 'name', 'phone', 'password', 'register_date']
-    default_values = {
-        'register_date': datetime.utcnow,
-    }
+class BaseEmbeddedDocument(EmbeddedDocument):
+    number = StringField(required=True)
+    created_by = ReferenceField(Admin)
+    created_date = DateTimeField(required=True)
+    last_modified_by = ReferenceField(Admin)
+    last_modified_date = DateTimeField()
+
+    meta = {'allow_inheritance': True}
+
+    def prepare_save():
+        if self.created_date is None:
+            self.created_date = datetime.utcnow()
+        self.last_modified_date = datetime.utcnow()
 
 
-@connection.register
-class OAuth(Document):
-    __database__ = 'park'
-    __collection__ = 'oauth'
-    structure = {
-        'member_id': ObjectId,
-        'oauth_name': IS('weichat', 'qq', 'weibo'),
-        'oauth_id': basestring,
-        'access_token': basestring,
-        'oauth_expires': basestring,
-    }
+class Carport(BaseEmbeddedDocument):
+    # todo 测试内嵌文档是否有id
+    status = StringField(choices=CARPORT_STATUS)
+    position = DictField()
+    sensor_status = StringField(choices=SENSOR_STATUS)
 
 
-@connection.register
-class Order(Document):
-    __database__ = 'park'
-    __collection__ = 'order'
-    structure = {
-        'number':basestring,
-        'car_number':basestring,
-        'carport': ObjectId,
-        'member': ObjectId,
-        'order_date': datetime,
-        'type': IS('预约', '非预约'),
-        'status': IS('开启', '已停车', '未付款', '已付款', '废弃'),
-        'appointment_date': datetime,
-        'park_date': datetime,
-        'leave_date': datetime,
-        'park_duration': datetime,
-        'total_price':float,
-        'payment': ObjectId,
-        'paid_date': datetime,
-        'cancel_date': datetime,
-        'paid_date': datetime,
-        'created_by': ObjectId,
-        'created_date': datetime,
-        'last_modified_by': ObjectId,
-        'last_modified_date': datetime
-    }
-    required_fields = ['number', 'carport', 'member', 'type', 'status']
-    default_values = {
-        'type' '非预约'
-        'status': '已停车',
-        'created_date': datetime.utcnow,
-        'last_modified_date': datetime.utcnow
-    }
+class Park(BaseDocument):
+    description = StringFieeld()
+    address = StringFieeld()
+    carport_count = IntField(default=0)
+    carports = ListField(EmbeddedDocumentField(Carport))
+    status = StringField(choices=PARK_STATUS)
+
+class Oauth(EmbeddedDocument):
+    oauth_name = StringField(choices=OAUTH_STATUS, required=True)
+    oauth_id = StringField(required=True)
+    access_token = StringField(required=True)
+    oauth_expires = FloatField(required=True)
 
 
-@connection.register
-class  SMS(Document):
-    __database__ = 'park'
-    __collection__ = 'sms'
-    structure = {
-        'number': basestring,
-        'from': basestring,
-        'to': basestring,
-        'theme': basestring,
-        'content': basestring,
-        'sent_date': datetime,
-        'parent': ObjectId,
-        'status': IS('成功', '失败'),
-        'failed_reason': basestring
-    }
-    required_fields = ['number', 'from', 'to', 'theme', 'content', 'sent_date', 'parent', 'status']
-    default_values = {
-        'status': '成功'
-    }
-@connection.register
-class  Admin(Document):
-    __database__ = 'park'
-    __collection__ = 'admin'
-    structure = {
-        'email': basestring,
-        'name': basestring,
-        'password': basestring,
-        'created_date': datetime,
-    }
-    required_fields = ['email', 'name', 'password', 'created_date']
+class Member(BaseDocument):
+    name = StringField(required=True)
+    phone = StringField(required=True)
+    password = StringField(required=True)
+    register_date = DateTimeField(required=True)
+    level = StringField()
+    oauth = ListField(EmbeddedDocumentField(Oauth))
+
+
+class Order(BaseDocument):
+    car_number = StringField(required=True)
+    carport = StringField(required=True)
+    park = ReferenceField(Park, required=True)
+    member = ReferenceField(Member)
+    is_appointment = BooleanField()
+    appointment_date = DateTimeField()
+    status = StringField(choices=ORDER_STATUS)
+    order_date = DateTimeField()
+    park_date = DateTimeField()
+    leave_date = DateTimeField()
+    park_duration = StringField()
+    total_price = FloatField()
+    paid_date = DateTimeField()
+    cancel_date = DateTimeField()
+
+
+class SMS(BaseDocument):
+    sender = StringField(required=True)
+    receiver = StringField(required=True)
+    theme = StringField(required=True)
+    content = StringField(required=True)
+    sent_date = StringField(required=True)
+    status = StringField(choices=SMS_STATUS, required=True)
+    parentid = ObjectIdField(required=True)

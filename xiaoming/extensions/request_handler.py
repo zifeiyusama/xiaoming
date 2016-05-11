@@ -11,7 +11,6 @@
 import tornado.escape
 import tornado.web
 from xiaoming.extensions.session import Session, RedisSession
-from xiaoming.models import connection
 
 class FlashMessageMixIn(object):
     """
@@ -37,7 +36,7 @@ class FlashMessageMixIn(object):
 
     def flash(self, message, category='message'):
         messages = self.messages()
-        messages.append((categofry, message))
+        messages.append((category, message))
         self.set_secure_cookie('flash_message', tornado.escape.json_encode(messages))
 
     def messages(self):
@@ -47,12 +46,15 @@ class FlashMessageMixIn(object):
 
     def get_flashed_messages(self):
         messages = self.messages()
-        self.clear_cookie('flash_messages')
+        self.clear_cookie('flash_message')
         return messages
 
 
 class RequestHandler(tornado.web.RequestHandler, FlashMessageMixIn):
     """ override the tornado RequestHandler and add flash and session"""
+
+    def initialize(self):
+        self.db = self.application.database
 
     def get_current_user(self):
         user = self.session['user'] if 'user' in self.session else None
